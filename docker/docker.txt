@@ -1,0 +1,1136 @@
+容器 Container 
+	
+	平台虚拟化
+	
+		全虚拟化	  	    qemu
+		半虚拟化	  		Xen
+		硬件辅助虚拟化  	kvm
+		
+	操作系统虚拟化
+	
+
+
+
+容器Container介绍
+
+	Docker最初是 dotCloud 公司创始人 Solomon Hykes 在法国期间发起的一个公司内部项目，它是基于 dotCloud 公司多年云服务技术的一次革新，并于 2013 年 3 月以 Apache 2.0 授权协议开源)，主要项目代码在 GitHub 上进行维护。Docker 项目后来还加入了 Linux 基金会，并成立推动开放容器联盟。
+	
+	Docker(C/S架构)使用Google公司推出的Go语言进行开发实现，基于 Linux 内核的cgroup，namespace，以及AUFS类的 Union FS 等技术，对进程进行封装隔离，属于操作系统层面的虚拟化技术。由于隔离的进程独立于宿主和其它的隔离的进程，因此也称其为容器
+
+	
+Docker的优势：
+
+1、更高效的利用系统资源 
+
+	由于容器不需要进行硬件虚拟化及运行完整操作系统额外开销，Docker对系统资源利用率更高 
+	
+2、更快速的启动时间
+
+	传统的虚拟机技术启动应用一般需要数分钟，而Docker容器由于直接运行在宿主机内核，可以做到秒极的启动
+	
+3、提供一致的运行环境(开发环境) 
+
+	可避免因主机系统、应用环境的不同导致程序bug不能及时找出的问题 
+	
+
+	
+	
+Docker基本概念
+
+1、镜像 Image 
+
+	Docker镜像是一个特殊的文件系统，除了提供容器运行时所需的程序、库、资源、配置等文件外，还包含了一些为运行时准备的一些配置参数（如匿名卷、环境变量、用户等）。镜像不包含任何动态数据(/proc, /sys)，其内容在构建之后也不会被改变。
+	
+	分层存储
+
+	因为镜像包含操作系统完整的 root 文件系统，其体积往往是庞大的，因此在 Docker 设计时，就充分利用 Union FS联合文件系统的技术，将其设计为分层存储的架构。所以严格来说，镜像并非是像一个 ISO 那样的打包文件，镜像只是一个虚拟的概念，其实际体现并非由一个文件组成，而是由一组文件系统组成，或者说，由多层文件系统联合组成
+
+2、容器	Container 	
+	
+3、仓库	Repository	
+
+	镜像构建完成后，可以很容易的在当前宿主上运行，但是，如果需要在其它服务器上使用这个镜像，我们就需要一个集中的存储、分发镜像的服务，Docker Registry 就是这样的服务。
+	
+	类型：
+		公有仓库	www.docker.com 
+		私有仓库 	公司创建
+		
+	镜像名称格式：
+
+		<repository>/<image>:<TAG>			
+		
+			docker.io/centos:latest 
+
+	一个 Docker Registry 中可以包含多个仓库（Repository）；每个仓库可以包含多个标签（Tag）；每个标签对应一个镜像。
+
+	通常，一个仓库会包含同一个软件不同版本的镜像，而标签就常用于对应该软件的各个版本。我们可以通过 <仓库名>:<标签> 的格式来指定具体是这个软件哪个版本的镜像。如果不给出标签，将以 latest 作为默认标签。
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+安装启动docker
+
+[root@node1 ~]# yum install -y docker
+
+[root@node1 ~]# systemctl start docker
+[root@node1 ~]# systemctl enable docker
+
+[root@node1 ~]# docker version 
+Client:
+ Version:         1.12.6
+ API version:     1.24
+ Package version: docker-1.12.6-32.git88a4867.el7.centos.x86_64
+ Go version:      go1.7.4
+ Git commit:      88a4867/1.12.6
+ Built:           Mon Jul  3 16:02:02 2017
+ OS/Arch:         linux/amd64
+
+Server:
+ Version:         1.12.6
+ API version:     1.24
+ Package version: docker-1.12.6-32.git88a4867.el7.centos.x86_64
+ Go version:      go1.7.4
+ Git commit:      88a4867/1.12.6
+ Built:           Mon Jul  3 16:02:02 2017
+ OS/Arch:         linux/amd64	
+ 
+ 
+查看docker使用帮助
+
+[root@node1 ~]# docker --help 
+ 
+ 
+ 
+ 
+ 
+查看docker镜像
+ 
+ [root@node1 ~]# docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+[root@node1 ~]# 
+
+
+查看docker官网镜像
+
+[root@node1 ~]# docker search all
+
+[root@node1 ~]# docker search centos
+ 
+ 
+下载镜像
+
+[root@node1 ~]# docker pull docker.io/ansible/centos7-ansible
+
+[root@node1 ~]# docker images
+REPOSITORY                          TAG                 IMAGE ID            CREATED             SIZE
+docker.io/ansible/centos7-ansible   latest              688353a31fde        7 months ago        447.2 MB
+[root@node1 ~]# 
+ 
+使用tar包导入镜像 
+[root@node01 ~]# docker import centos.tar local.io/centos7
+ 
+ 
+容器管理
+
+1、启动容器 
+
+Usage:  docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
+ 
+[root@node1 ~]# docker run  -i -t --name=c1 docker.io/ansible/centos7-ansible /bin/bash
+ 
+[root@1783564912c9 ~]# ifconfig eth0
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.17.0.2  netmask 255.255.0.0  broadcast 0.0.0.0
+        inet6 fe80::42:acff:fe11:2  prefixlen 64  scopeid 0x20<link>
+        ether 02:42:ac:11:00:02  txqueuelen 0  (Ethernet)
+        RX packets 8060  bytes 10354822 (9.8 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 5748  bytes 324289 (316.6 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+ 
+物理机上会出现docker0虚拟网桥 
+
+[root@node1 ~]# ifconfig docker0
+docker0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.17.0.1  netmask 255.255.0.0  broadcast 0.0.0.0
+        inet6 fe80::42:28ff:fe91:f703  prefixlen 64  scopeid 0x20<link>
+        ether 02:42:28:91:f7:03  txqueuelen 0  (Ethernet)
+        RX packets 5749  bytes 243869 (238.1 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 8052  bytes 10354174 (9.8 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+ 
+ 
+ 
+2、退出容器 
+
+	ctrl + p + q		配置容器在后台运行 
+	
+按exit同样可以退出容器运行，再次运行使用以下命令
+
+[root@node1 ~]# docker start c1
+c1
+[root@node1 ~]# docker ps --all
+CONTAINER ID        IMAGE                               COMMAND             CREATED             STATUS              PORTS               NAMES
+94555048a622        docker.io/ansible/centos7-ansible   "/bin/bash"         4 minutes ago       Up 4 minutes                            c2
+1783564912c9        docker.io/ansible/centos7-ansible   "/bin/bash"         About an hour ago   Up 5 seconds                            c1
+[root@node1 ~]# 	
+	
+	
+3、查看容器
+
+[root@node1 ~]# docker ps
+CONTAINER ID        IMAGE                               COMMAND             CREATED             STATUS              PORTS               NAMES
+1783564912c9        docker.io/ansible/centos7-ansible   "/bin/bash"         6 minutes ago       Up 6 minutes                            c1
+[root@node1 ~]# 
+
+[root@node1 ~]# docker ps --all
+
+
+4、连接容器 
+
+[root@node1 ~]# docker attach c1
+
+[root@node1 ~]# docker attach 1783
+ 
+ 
+5、删除容器 
+
+[root@node1 ~]# docker stop c3
+c3
+[root@node1 ~]# docker rm c3
+c3
+ 
+ 
+6、启动容器时直接在后台运行
+
+[root@node1 ~]# docker run -t -i -d --name c3 docker.io/ansible/centos7-ansible /bin/bash
+8478dc790d1bac430355de2ec1575522c5130c19fb5e8c777b701e79e63e1a57 
+ 
+ 
+[root@node1 ~]# docker run -d --name c4 docker.io/ansible/centos7-ansible /bin/bash			//创建出来直接为EXIT状态
+4249b244be8e3e7e3657a9107544f64970b8c7a79408535134f85b3dc26ba628
+
+[root@node1 ~]# docker ps --all
+CONTAINER ID        IMAGE                               COMMAND             CREATED             STATUS                     PORTS               NAMES
+4249b244be8e        docker.io/ansible/centos7-ansible   "/bin/bash"         5 seconds ago       Exited (0) 4 seconds ago                       c4 
+ 
+导出容器镜像
+
+[root@node01 ~]# docker export -o centos.tar c1
+
+导入容器镜像
+
+[root@node01 ~]# docker import centos.tar test:centos6
+
+[root@node01 ~]# docker import centos.tar test.io/centos6:v6
+
+
+ 
+7、配置端口转发发布容器中的服务 
+
+1) 建立容器时使用-p host_ip:host_port:port发布服务
+2) 在nat表中的DOCKER链手动添加DNAT规则
+
+[root@node1 ~]# docker run -ti -p 192.168.122.101:80:80 --name c5 docker.io/ansible/centos7-ansible /bin/bash
+
+ssh服务
+
+[root@node1 ~]# docker run -t -i -p 192.168.0.10:9090:22 --name c3 docker.io/ansible/centos7-ansible /bin/bash
+ 
+解决ssh提示缺少key的问题：
+
+# ssh-keygen -t rsa -b 2048 -f /etc/ssh/ssh_host_rsa_key
+
+
+ 
+ 
+8、由于容器每次退出启动的时候IP地址会产生变化，为了确保容器间的网络的持久性连接可以采用以下方式确认容器间通过主机名、别名(mysqlone为别名)通信 
+
+[root@node1 ~]# docker run -t -i --name c6 --link=c1:mysqlone docker.io/ansible/centos7-ansible
+ 
+[root@48eb865a9ae3 ansible]# cat /etc/hosts
+127.0.0.1	localhost
+::1	localhost ip6-localhost ip6-loopback
+fe00::0	ip6-localnet
+ff00::0	ip6-mcastprefix
+ff02::1	ip6-allnodes
+ff02::2	ip6-allrouters
+172.17.0.3	mysqlone 1783564912c9 c1
+172.17.0.4	48eb865a9ae3
+ 
+ 
+ 
+ 
+9、通过挂载本地目录的方式持久化容器数据存储
+
+方法1)
+
+[root@node1 ~]# mkdir /data
+[root@node1 ~]# docker run -t -i -v /data/:/tmp/data --name c7 docker.io/ansible/centos7-ansible
+[root@09b5adfbe326 ansible]# ls /tmp/
+data  ks-script-LRoSA2  yum.log 
+
+-v /data:/tmp/data		//将本地目录/data挂载到容器的/tmp目录下，将来容器在/tmp/data目录创建的文件会持久化存储到本地/data目录中
+ 
+ 
+方法2) 容器卷
+
+[root@node1 ~]# docker run -t -i -d -v /data/:/tmp/data --name c8 docker.io/ansible/centos7-ansible /bin/bash  
+ 
+[root@node1 ~]# docker run -t -i --volumes-from c8 --name c9 docker.io/ansible/centos7-ansible /bin/bash 
+ 
+[root@e626e3914b16 ansible]# ls /tmp/
+data  ks-script-LRoSA2  yum.log
+[root@e626e3914b16 ansible]# touch /tmp/data/c-9.txt
+
+在c9中/tmp/data目录下创建的文件，会出现在c8容器的/tmp/data目录及物理机的/data目录 
+
+
+
+
+10、设置容器开机自启动
+
+[root@node1 ~]# docker run -t -i --name c10 --restart always docker.io/ansible/centos7-ansible /bin/bash
+
+重启物理机后，使用docker ps命令查看运行状态的容器 
+
+[root@node1 ~]# docker ps
+CONTAINER ID        IMAGE                               COMMAND             CREATED              STATUS              PORTS               NAMES
+c6f8ac135a76        docker.io/ansible/centos7-ansible   "/bin/bash"         About a minute ago   Up 21 seconds                           c10
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Docker网络管理
+		
+容器网络模式：
+
+	1、host模式
+	
+		如果启动容器时使用host模式，那么这个容器不会获得一个独立的network namespace, 而是和宿主机共用一个network namespace; 
+		容器不会虚拟自己的网卡，而是使用宿主机的IP和端口，但其他资源仍然是隔离的
+		
+		[root@node1 ~]# docker run  -ti --name c3 --net=host docker.io/ansible/centos7-ansible /bin/bash
+		
+		[root@node1 ansible]# ifconfig
+		
+		eno16777728: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.0.10  netmask 255.255.255.0  broadcast 192.168.0.255
+
+	2、container模式
+	
+		这个模式指定新创建的容器和已经存在的一个容器共享一个network namespace, 这个容器会和指定的容器共享IP，但其他资源仍然是隔离的
+		
+		[root@node1 ~]# docker run -ti --name c4 --net=container:c1 docker.io/ansible/centos7-ansible /bin/bash
+		
+	3、none模式
+	
+		在这种模式下，Docker容器拥有自己的Network namespace，但是，其并不为容器进行任何网络配置。
+		
+		[root@node1 ~]# docker run  -ti --net=none --name c5 docker.io/ansible/centos7-ansible /bin/bash
+		
+		
+	4、bridge模式
+	
+			类似于NAT模式 
+	
+	可以在创建容器时使用--net选项指定容器使用的网络模式	
+ 
+ 
+ 
+ 
+ 
+创建自定义docker网桥
+
+[root@node01 ~]# rpm -q bridge-utils
+bridge-utils-1.5-9.el7.x86_64
+
+
+[root@node2 ~]# brctl addbr docker1
+
+[root@node2 ~]# ip addr add dev docker1 10.1.1.1/24
+
+[root@node2 ~]# ip link set dev docker1 up
+
+[root@node2 ~]# cat /etc/sysconfig/docker-network 
+	DOCKER_NETWORK_OPTIONS="-b=docker1"
+[root@node2 ~]# 
+ 
+[root@node2 ~]# systemctl restart docker
+ 
+[root@node2 ~]# ip addr show docker1
+11: docker1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP 
+    link/ether be:6b:4f:4c:e4:f5 brd ff:ff:ff:ff:ff:ff
+    inet 10.1.1.1/24 scope global docker1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::8c2e:a2ff:fe5b:c765/64 scope link 
+       valid_lft forever preferred_lft forever 
+ 
+
+[root@node01 ~]# brctl stp docker1 on
+[root@node01 ~]# brctl show
+bridge name	bridge id		STP enabled	interfaces
+docker0		8000.0242ce75a811	no		
+docker1		8000.9afc90a04bca	yes		veth607a4da
+[root@node01 ~]# 
+ 
+ 
+ 
+创建容器，验证容器IP地址
+
+[root@node2 ~]# docker run -t -i --name c3 docker.io/ansible/centos7-ansible /bin/bash
+
+[root@bc06393945d6 ansible]# ifconfig
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.1.1.2  netmask 255.255.255.0  broadcast 0.0.0.0
+        inet6 fe80::42:aff:fe01:102  prefixlen 64  scopeid 0x20<link>
+        ether 02:42:0a:01:01:02  txqueuelen 0  (Ethernet)
+        RX packets 7688  bytes 15344215 (14.6 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 6482  bytes 476961 (465.7 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0 
+ 
+ 
+ 
+ 
+创建自定义网络，并固定容器的IP
+
+[root@node01 ~]# docker network create --subnet=10.1.1.0/24 network01
+
+[root@node01 ~]# docker run -ti --name=c1 --network=network01 --ip=10.1.1.10 local.io/centos /bin/bash
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+docker网络配置工具的使用
+
+
+pipework工具
+
+	pipework是由Docker的工程师Jérôme Petazzoni开发的一个Docker网络配置工具，由200多行shell实现，方便易用。
+ 
+安装pipework
+
+[root@node01 ~]# git clone https://github.com/jpetazzo/pipework
+[root@node01 ~]# cp ~/pipework/pipework /usr/local/bin/
+ 
+示例01：
+
+为了使本地网络中的机器和Docker容器更方便的通信，我们经常会有将Docker容器配置到和主机同一网段的需求。这个需求其实很容易实现，我们只要将Docker容器和主机的网卡桥接起来，再给Docker容器配上IP就可以了。
+ 
+ 
+[root@node01 ~]# docker run  -t -i -d --name c1 docker.io/ansible/centos7-ansible /bin/bash
+
+[root@node01 ~]# pipework docker0 c1 192.168.122.111/24@192.168.122.1
+
+[root@node01 ~]# ip addr add 192.168.122.101/24 dev docker0
+
+[root@node01 ~]# ip addr del 192.168.122.101/24 dev eth0 
+
+[root@node01 ~]# brctl addif docker0 eth0
+
+创建桥接网卡，主机node01和外部网络通信不正常，需要手工添加默认路由
+
+[root@node01 ~]# route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+192.168.122.0   0.0.0.0         255.255.255.0   U     0      0        0 docker0
+
+[root@node01 ~]# route add default gw 192.168.122.1
+
+[root@node01 ~]# route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.122.1   0.0.0.0         UG    0      0        0 docker0
+172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+192.168.122.0   0.0.0.0         255.255.255.0   U     0      0        0 docker0
+[root@node01 ~]# 
+
+
+
+示例02：
+
+单主机容器做vlan隔离
+
+[root@node01 ~]# docker run -tid --name c1 docker.io/ansible/centos7-ansible /bin/bash
+[root@node01 ~]# docker run -tid --name c2 docker.io/ansible/centos7-ansible /bin/bash
+[root@node01 ~]# docker run -tid --name c3 docker.io/ansible/centos7-ansible /bin/bash
+[root@node01 ~]# docker run -tid --name c4 docker.io/ansible/centos7-ansible /bin/bash
+
+[root@node01 ~]# yum install -y openvswitch
+[root@node01 ~]# systemctl start openvswitch
+
+[root@node01 ~]# pipework ovs0 c1 10.1.1.1/24 @100
+[root@node01 ~]# pipework ovs0 c2 10.1.1.2/24 @100
+
+[root@node01 ~]# pipework ovs0 c3 10.1.1.3/24 @200
+[root@node01 ~]# pipework ovs0 c4 10.1.1.4/24 @200
+
+测试只有相同vlan的主机可以相互通信 
+
+
+
+
+
+
+
+Weave工具
+
+Weave是Github上一个比较热门的Docker容器网络方案，具有非常良好的易用性且功能强大。
+
+Weave 的框架它包含了两大主要组件：
+
+	1) Weave：用户态的shell脚本，用于安装Weave，将container连接到Weave虚拟网络。并为它们分配IP。
+	2) Weaver：
+		运行于container内，每个Weave网络内的主机都要运行，是一个Go语言实现的虚拟网络路由器。不同主机之间的网络通信依赖于Weaver路由。
+  
+Weave通过创建虚拟网络使Docker容器能够跨主机通信并能够自动相互发现。
+
+
+[root@node2 ~]# git clone https://github.com/weaveworks/weave.git
+
+[root@node2 ~]# chmod a+x /usr/local/bin/weave 
+
+[root@node2 ~]# weave launch
+
+
+在主机01上创建容器c1，并使用weave工具为其配置IP为10.1.1.1/24
+
+[root@node1 ~]# docker run -tid --name c1 docker.io/ansible/centos7-ansible /bin/bash
+
+[root@node1 ~]# weave attach 10.1.1.1/24 c1
+10.1.1.1
+
+在主机02上创建容器c1，并使用weave工具为其配置IP为10.1.1.2/24
+
+[root@node2 ~]# docker run -tid --name c1 docker.io/ansible/centos7-ansible /bin/bash
+
+[root@node2 ~]# weave attach 10.1.1.2/24 c1
+10.1.1.2
+[root@node2 ~]# 
+
+
+配置weave连接peer对端主机
+
+[root@node1 ~]# weave connect 192.168.0.20
+
+[root@node1 ~]# docker attach c1
+
+[root@f829b2a5432d ansible]# ping 10.1.1.2
+PING 10.1.1.2 (10.1.1.2) 56(84) bytes of data.
+64 bytes from 10.1.1.2: icmp_seq=1 ttl=64 time=10.0 ms
+
+--- 10.1.1.2 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 10.071/10.071/10.071/0.000 ms
+[root@f829b2a5432d ansible]# 
+
+
+同样的在主机02上的容器上进行测试
+
+[root@node2 ~]# docker attach c1
+
+[root@2ea7ee1c0121 ansible]# ping 10.1.1.1
+PING 10.1.1.1 (10.1.1.1) 56(84) bytes of data.
+64 bytes from 10.1.1.1: icmp_seq=1 ttl=64 time=0.384 ms
+64 bytes from 10.1.1.1: icmp_seq=2 ttl=64 time=0.718 ms
+
+--- 10.1.1.1 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1002ms
+rtt min/avg/max/mdev = 0.384/0.551/0.718/0.167 ms
+[root@2ea7ee1c0121 ansible]# 
+
+
+
+
+
+
+
+
+Flannel && etcd 工具
+
+	Flannel的设计目的就是为集群中的所有节点重新规划IP地址的使用规则，从而使得不同节点上的容器能够获得"同属一个内网"且"不重复的"IP地址，并让属于不同节点上的容器能够直接通过内网IP通信。
+
+	Flannel实质上是一种"覆盖网络(overlay network)"，即表示运行在一个网上的网（应用层网络），并不依靠ip地址来传递消息，而是采用一种映射机制，把ip地址和identifiers做映射来资源定位。也就是将TCP数据包装在另一种网络包里面进行路由转发和通信，目前已经支持UDP、VxLAN、AWS VPC和GCE路由等数据转发方式。
+
+
+	原理是每个主机配置一个ip段和子网个数。例如，可以配置一个覆盖网络使用 10.100.0.0/16段，每个主机/24个子网。因此主机a可以接受10.100.5.0/24，主机B可以接受10.100.18.0/24的包。flannel使用etcd来维护分配的子网到实际的ip地址之间的映射。
+	
+	flannel使用etcd存储配置数据和子网分配信息。flannel启动之后，后台进程首先检索配置和正在使用的子网列表，然后选择一个可用的子网，然后尝试去注册它。
+	etcd也存储这个每个主机对应的ip。flannel使用etcd的watch机制监视/coreos.com/network/subnets下面所有元素的变化信息，并且根据他来维护一个路由表。
+
+
+
+示例：
+
+环境描述：
+
+	192.168.0.10   node1    etcd 
+	192.168.0.20   node2 
+	
+主机192.168.0.10配置：
+
+1) 安装软件，配置主机名解析
+
+[root@node1 ~]# yum install -y flannel etcd docker 
+
+[root@node1 ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+192.168.0.10 node1.linux.com node1
+192.168.0.20 node2.linux.com node2
+192.168.0.10 etcd
+[root@node1 ~]# 
+
+2) 编辑etcd配置文件,并启动etcd服务 
+
+[root@node1 ~]# vim /etc/etcd/etcd.conf 
+
+	ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
+
+	ETCD_ADVERTISE_CLIENT_URLS="http://0.0.0.0:2379"
+
+[root@node1 ~]# systemctl start etcd
+[root@node1 ~]# systemctl enable etcd
+
+通过写入键值对测试etcd是否正常
+
+[root@node01 ~]# etcdctl set testdir/key1 10
+10
+[root@node01 ~]# etcdctl get testdir/key1
+10
+[root@node01 ~]# etcdctl ls
+/testdir
+[root@node01 ~]# 
+
+
+
+
+
+3) 编辑flannel配置文件
+
+[root@node1 ~]# vim /etc/sysconfig/flanneld 
+
+	FLANNEL_ETCD_ENDPOINTS="http://etcd:2379"
+
+	
+4) 指定要为容器分配IP地址的网段信息
+
+[root@node01]# etcdctl mk /atomic.io/network/config '{ "Network": "10.0.0.0/16" }'
+
+
+5) 启动flannel服务 
+
+[root@node2 ~]# systemctl start flanneld.service 
+[root@node2 ~]# systemctl enable flanneld.service
+
+ 
+重启docker服务，机器上会多出flannel0网卡，且docker0网卡的IP地址会变化为指定网段的IP地址 
+
+ 
+ 
+主机192.168.0.20配置：
+
+1) 配置主机名解析，安装软件 
+
+[root@node2 ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+192.168.0.10 node1.linux.com node1
+192.168.0.20 node2.linux.com node2
+192.168.0.10 etcd
+
+[root@node2 ~]# yum install -y docker flannel 
+
+
+2) 编辑flannel配置文件
+
+[root@node2 ~]# vim /etc/sysconfig/flanneld 
+
+	FLANNEL_ETCD_ENDPOINTS="http://etcd:2379"
+
+
+	FLANNEL_ETCD_PREFIX="/atomic.io/network"
+
+[root@node01 ~]# systemctl start flanneld
+[root@node01 ~]# systemctl enable flanneld
+ 
+重启docker服务，机器上会多出flannel0网卡，且docker0网卡的IP地址会变化为指定网段的IP地址 
+
+ 
+验证结果
+
+分别在两台主机上创建容器，并测试容器间的通信 
+
+[root@node1 ~]# docker run -tid --name c1 docker.io/centos /bin/bash
+
+[root@node1 ~]# docker attach c1 
+ 
+[root@2b6b4c603c94 /]# ifconfig
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1472
+        inet 10.0.34.2  netmask 255.255.255.0  broadcast 0.0.0.0
+
+[root@2b6b4c603c94 /]# ping 10.0.94.2
+PING 10.0.94.2 (10.0.94.2) 56(84) bytes of data.
+64 bytes from 10.0.94.2: icmp_seq=1 ttl=60 time=1.57 ms
+64 bytes from 10.0.94.2: icmp_seq=2 ttl=60 time=1.37 ms
+64 bytes from 10.0.94.2: icmp_seq=3 ttl=60 time=1.14 ms
+ 
+ 
+ 
+[root@node2 ~]# docker run -t -i --name c1 docker.io/centos /bin/bash
+
+[root@node2 ~]# docker attach c1 
+
+[root@06204e5ecc95 /]# ifconfig 
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1472
+        inet 10.0.94.2  netmask 255.255.255.0  broadcast 0.0.0.0
+
+[root@06204e5ecc95 /]# ping 10.0.34.2
+PING 10.0.34.2 (10.0.34.2) 56(84) bytes of data.
+64 bytes from 10.0.34.2: icmp_seq=1 ttl=60 time=1.14 ms
+64 bytes from 10.0.34.2: icmp_seq=2 ttl=60 time=1.08 ms
+64 bytes from 10.0.34.2: icmp_seq=3 ttl=60 time=1.12 ms 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+容器镜像管理
+
+ 
+ 
+基于Dockerfile创建镜像
+
+
+示例：
+
+[root@node02 ~]# cat /root/test01 
+
+	FROM local-test/centos7.2:v1				
+	RUN yum install -y httpd &&  yum install -y vsftpd 
+
+	解释：
+		FROM：用于指定一个基础镜像
+		RUN：执行任务，建议同一个任务的多条指令使用&&连接多个命令完成 
+		
+[root@node02 ~]# docker build -t centos7.2-httpd:v2 -f test01 /root
+		
+	-t：用于指定镜像名称、标记
+	-f：指定dockerfile名称 
+
+[root@node02 ~]# docker images 
+REPOSITORY             TAG                 IMAGE ID            CREATED             SIZE
+centos7.2-httpd        v2                  2cdfd7a685f6        2 minutes ago       1.08 GB
+
+
+Dockerfile指令说明：
+
+1、FROM <image>
+
+	用于指定基础镜像
+	
+2、MAINTAINER <name> 
+
+	用于指定镜像的作者信息，当执行docker inspect指令时出有输出 
+
+3、RUN指令
+
+	RUN <command>
+	RUN ["command","arg1","arg2"]
+	
+	RUN yum install -y net-tools 
+	RUN ["yum","install","-y","net-tools"]
+	
+	用于执行基础镜像支持的任何指令
+
+4、CMD指令
+
+	CMD <command> <arg1> <arg2>
+	CMD ["command","arg1","arg2"]
+ 
+	用于指定容器启动时执行的操作；一个dockerfile中只能有一条CMD指令，如果有多条则执行最后一条
+ 
+5、ENTRYPOINT指令
+
+	ENTRYPOINT <command> <arg1> <arg2>
+	ENTRYPOINT ["command","arg1","arg2"]
+	
+	该指令两种使用方式：
+	
+		1) 独自使用
+		
+			当独自使用时，如果还使用了CMD指令且CMD指令是一个完整的可执行命令时，只会执行最后的指令
+			
+			例如：
+			
+			CMD echo “Hello, World!”  
+			ENTRYPOINT ls -l 
+			
+			以上示例只会运行ls -l 
+			
+			
+		2) 与CMD指令配合使用
+			
+			此时，CMD指令后跟的不再是完整的可执行命令，而仅是作为ENTRYPOINT指令后的参数使用
+			
+			例如：
+			
+			ENTRYPOINT ["cat"]
+			CMD ["-n","/etc/passwd"]
+ 
+6、USER指令
+
+	USER <name>
+	
+	用于设置启动容器的用户，默认为root
+	
+	
+7、EXPOSE指令
+
+	EXPOSE <port1> <port2> .... 
+
+	
+	用于设置容器启动时，要映射到物理机的端口；容器启动后，会将该端口映射到物理机上的随机端口
+	
+	例如：
+	
+	1)
+	
+	映射一个端口  
+	EXPOSE port1  
+	
+   相应的运行容器使用的命令  
+	docker run -p port1 image  
+	
+	2)
+	
+	# 映射多个端口  
+	EXPOSE port1 port2 port3  
+	
+	# 相应的运行容器使用的命令  
+	docker run -p port1 -p port2 -p port3 image  
+	
+	# 还可以指定需要映射到宿主机器上的某个端口号  
+	docker run -p host_port1:port1 -p host_port2:port2 -p host_port3:port3 image
+
+
+8、ENV指令 
+
+	ENV <key> <value>
+	
+	用于为容器设置环境变量，可以使用docker inspect查看；也可以通过docker run --env <key>=<value>设置或修改环境变量
+	
+	该变量设置后，后续的RUN指令都可以使用该变量
+	
+	例如：
+	
+	ENV JAVA_HOME /app/jdk1.8.3_91
+
+	
+
+9、ADD指令 
+
+	ADD <src> <dest>		ADD /tmp/nginx-1.13.4.tar.gz /tmp/
+	
+	用于将src指定的文件复制到容器的dest目录 
+	
+	1) 所有拷贝到容器中的文件及目录权限为0755，uid及gid均为0
+	2) src如果是一个目录，那会将该目录下所有文件拷贝到容器中，不包括目录 
+	3) 如果src是文件且dest不以/结束，dest会被识别为文件，src中的内容会把dest文件内容覆盖
+	4) 如果src是文件且dest以/结束，则会将src文件拷贝到dest目录 
+	
+
+
+10、VOLUME指令
+
+	VOLUME ["mount_point"]
+
+	用于创建一个本机或者为其他容器使用的挂载点，用于数据的持久化保存
+	
+	例如： 
+	
+	FROM base
+	VOLUME ["/tmp/data"]
+	
+
+
+11、WORKDIR指令 
+
+	WORKDIR <path>
+	
+	用于切换目录，类似于cd命令；
+	对RUN, CMD, ENTRYPOINT指令生效
+ 
+ 
+ 
+12、COPY指令
+
+	COPY <src> <dest>
+	
+	用于复制本地主机的src文件(为Dockerfile所在目录的相对路径、文件或者目录)到容器的dest
+	目录路径不存在时，会自动创建
+	
+	当复制物理机目录到容器时，推荐使用COPY
+	
+	
+13、ARG指令
+
+	ARG <key>=<value>
+	
+	Docker 1.9版本后新加入的指令，ARG定义的变量只有在构建image时有效，建立完后变量消失
+	
+
+	
+示例：部署jdk环境
+
+[root@node01 test]# cat file_jdk 
+
+FROM local.io/centos
+
+MAINTAINER 454452000
+
+COPY jdk-8u91-linux-x64.tar.gz /tmp
+
+RUN mkdir /app \
+    && tar xf /tmp/jdk-8u91-linux-x64.tar.gz -C /app \
+    && rm -rf /tmp/jdk-8u91-linux-x64.tar.gz 
+
+ENV JAVA_HOME /app/jdk1.8.0_91
+
+RUN echo "export PATH=$PATH:$JAVA_HOME/bin" >> /etc/profile
+[root@node01 test]# 
+
+
+
+
+通过对系统打包的方式制作镜像
+
+1、对文件系统打包
+
+[root@localhost ~]# tar -cf --numeric-owner --exclude=/proc --exclude=/sys /data/centos7_2.tar /
+
+
+2、将包拷贝到运行容器的主机
+
+3、导入镜像 
+
+[root@localhost ~]# docker import centos.tar local.io/centos 
+
+	
+	
+导出容器
+
+[root@node01 ~]# docker export -o centos7_4_jdk.tar c4
+	
+	
+	
+	
+	
+ 
+ 
+ 
+Docker仓库 Repository 
+
+	Docker仓库用于保存镜像，有公有仓库(Docker Hub)、私有仓库
+ 
+ 
+公有仓库
+
+https://www.docker.com/ 注册账号 
+
+也可以使用命令行登录公有仓库
+
+[root@node1 ~]# docker login
+Username: dockerwjc
+Password: 
+Login Succeeded
+ 
+ 
+退出仓库
+
+[root@node1 ~]# docker logout
+	Remove login credentials for https://index.docker.io/v1/
+[root@node1 ~]#  
+ 
+ 
+ 
+ 
+ 
+ 
+私有仓库
+
+	私有仓库是通过一个基于registry镜像的容器来实现的 
+	
+1、下载docker仓库使用的镜像 
+
+[root@node1 ~]# docker search registry
+INDEX       NAME                                              DESCRIPTION                                     STARS     OFFICIAL   AUTOMATED
+docker.io   docker.io/registry                                The Docker Registry 2.0 implementation for...   1587      [OK]       
+
+[root@node1 ~]# docker pull docker.io/registry 	
+ 
+ 
+2、在本地创建目录，作为私有仓库容器的持久性存储目录
+
+[root@node1 ~]# mkdir /docker_repos/
+ 
+ 
+3、创建私有仓库容器 
+
+[root@node1 ~]# docker run -d -p 5000:5000 -v /docker_repos/:/var/lib/registry --name c1 docker.io/registry 
+
+查看仓库
+
+[root@node1 ~]# curl http://192.168.0.10:5000/v2/_catalog
+{"repositories":[]}
+
+4、由于仓库默认使用https方式连接，需要证书；如果没有证书，上传镜像时会失败；因此，需要修改以下配置文件
+
+[root@node1 ~]# vim /etc/sysconfig/docker
+
+	ADD_REGISTRY='--insecure-registry 192.168.0.10:5000'
+ 
+[root@node1 ~]# systemctl restart docker
+ 
+[root@node1 ~]# docker start c1
+c1
+
+可在创建容器时添加--restart=always时设置其自启动
+
+
+
+5、上传镜像
+
+1) 为镜像打标记
+
+[root@node1 ~]# docker tag docker.io/centos:latest 192.168.0.10:5000/centos:latest
+[root@node1 ~]# docker images 
+REPOSITORY                       TAG                 IMAGE ID            CREATED             SIZE
+192.168.0.10:5000/centos7-base   latest              98fec2b17f34        41 minutes ago      897.9 MB
+docker.io/registry               latest              751f286bc25e        5 days ago          33.19 MB
+192.168.0.10:5000/centos         latest              36540f359ca3        2 weeks ago         192.5 MB
+docker.io/centos                 latest              36540f359ca3        2 weeks ago         192.5 MB
+
+
+2) 上传镜像 
+
+[root@node1 ~]# docker push 192.168.0.10:5000/centos:latest 
+The push refers to a repository [192.168.0.10:5000/centos]
+99b28d9413e4: Pushed 
+latest: digest: sha256:be75ab58dd48ff4a513f40f745134ea90688c1d4d2dda27fdc6e3b1cb4a6e2b2 size: 529
+[root@node1 ~]# 
+
+[root@node1 ~]# curl http://192.168.0.10:5000/v2/_catalog
+{"repositories":["centos"]}
+
+
+
+
+
+可以为私有仓库创建用户名、密码进行认证 
+
+[root@node1 ~]# docker stop c1
+c1
+[root@node1 ~]# docker rm c1
+c1
+
+[root@node1 ~]# docker run --entrypoint htpasswd docker.io/registry:latest -Bbn martin redhat >> /docker_repos/auth/htpasswd
+
+[root@node1 ~]# ls /docker_repos/auth/
+htpasswd
+[root@node1 ~]# cat /docker_repos/auth/htpasswd 
+martin:$2y$05$IZnWugGXtvs95RwA9aMc0uuJDTKQHU5gZteTu01bUyQ5nI3wpwHAO
+
+
+[root@node1 ~]# docker run -d -p 5000:5000 --name=c1 --restart=always -v /docker_repos/auth/:/auth \
+> -e "REGISTRY_AUTH=htpasswd" -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
+> -e "REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd" \
+> -v /docker_repos/:/var/lib/registry docker.io/registry:latest
+
+[root@node1 ~]# docker ps
+CONTAINER ID        IMAGE                       COMMAND                  CREATED             STATUS              PORTS                    NAMES
+0ccca7e7ec4d        docker.io/registry:latest   "/entrypoint.sh /etc/"   4 seconds ago       Up 3 seconds        0.0.0.0:5000->5000/tcp   pedantic_bhabha
+[root@node1 ~]# 
+
+
+此时再向私有仓库上传镜像会出现如下提示：
+
+[root@node1 ~]# docker tag docker.io/registry:latest 192.168.0.10:5000/registry:latest 
+[root@node1 ~]# docker images
+REPOSITORY                    exit
+exit   TAG                 IMAGE ID            CREATED             SIZE
+192.168.0.10:5000/centos7-base   latest              98fec2b17f34        54 minutes ago      897.9 MB
+192.168.0.10:5000/registry       latest              751f286bc25e        5 days ago          33.19 MB
+docker.io/registry               latest              751f286bc25e        5 days ago          33.19 MB
+192.168.0.10:5000/centos         latest              36540f359ca3        2 weeks ago         192.5 MB
+docker.io/centos                 latest              36540f359ca3        2 weeks ago         192.5 MB
+<none>                           <none>              91c580493425        4 years ago         313.8 MB
+[root@node1 ~]# docker push 192.168.0.10:5000/registry
+The push refers to a repository [192.168.0.10:5000/registry]
+
+2bf5fdee0818: Preparing 
+e23ed9242cd7: Preparing 
+32f085a1e7bb: Preparing 
+05d392f56700: Preparing 
+no basic auth credentials				//无认证 
+
+
+需要登录再次上传镜像
+
+[root@node1 ~]# 
+[root@node1 ~]# docker login 192.168.0.10:5000
+Username: martin
+Password: 
+Login Succeeded
+
+[root@node1 ~]# docker push 192.168.0.10:5000/registry
+The push refers to a repository [192.168.0.10:5000/registry]
+2bf5fdee0818: Pushed 
+e23ed9242cd7: Pushed 
+32f085a1e7bb: Pushed 
+05d392f56700: Pushed 
+2b0fb280b60d: Pushed 
+latest: digest: sha256:f5552e60ffd56fecbe2f04b61a3089a9cd755bd9352b6b5ab22cf2208af6a3a8 size: 1364
+
+通过认证后，无法再通过curl命令查看，但可以通过浏览器http://192.168.0.10:5000/v2/_catalog查看镜像内容 
+ 
+ 
+ 
